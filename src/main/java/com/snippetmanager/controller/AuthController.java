@@ -6,8 +6,10 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/api/auth")
@@ -17,6 +19,19 @@ public class AuthController {
 
     public AuthController(UserRepository userRepository) {
         this.userRepository = userRepository;
+    }
+
+    @GetMapping("/users")
+    public ResponseEntity<List<Map<String, Object>>> listRegisteredUsers() {
+        List<Map<String, Object>> safeUsers = userRepository.findAll().stream()
+                .map(u -> Map.<String, Object>of(
+                        "id", u.getId(),
+                        "name", u.getName(),
+                        "username", u.getUsername(),
+                        "role", u.getRole()
+                ))
+                .collect(Collectors.toList());
+        return ResponseEntity.ok(safeUsers);
     }
 
     @PostMapping("/login")
@@ -31,7 +46,7 @@ public class AuthController {
 
         if (userOpt.isEmpty() || !userOpt.get().getPassword().equals(password)) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-                    .body(Map.of("error", "Invalid member name/username or password"));
+                    .body(Map.of("error", "Invalid name/username or password"));
         }
 
         User u = userOpt.get();

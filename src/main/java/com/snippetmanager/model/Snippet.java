@@ -30,6 +30,17 @@ public class Snippet {
     @Column(length = 120)
     private String projectContext = "General Utility";
 
+    @Column(nullable = false, length = 20)
+    private String visibility = "PUBLIC";
+
+    private Long groupId;
+
+    @Column(length = 120)
+    private String groupName;
+
+    @Column(length = 80)
+    private String ownerUsername;
+
     @Column(length = 255)
     private String tags;
 
@@ -67,8 +78,7 @@ public class Snippet {
     @Column(nullable = false)
     private LocalDateTime updatedAt;
 
-    public Snippet() {
-    }
+    public Snippet() {}
 
     public Snippet(Long id, String title, String language, String category, String tags,
                    String description, String codeContent, String author, boolean favorite, boolean sharedWithTeam) {
@@ -97,6 +107,9 @@ public class Snippet {
         if (this.projectContext == null || this.projectContext.isBlank()) {
             this.projectContext = "General Utility";
         }
+        if (this.visibility == null || this.visibility.isBlank()) {
+            this.visibility = "PUBLIC";
+        }
     }
 
     @PreUpdate
@@ -118,6 +131,18 @@ public class Snippet {
 
     public String getProjectContext() { return projectContext; }
     public void setProjectContext(String projectContext) { this.projectContext = projectContext; }
+
+    public String getVisibility() { return visibility; }
+    public void setVisibility(String visibility) { this.visibility = visibility; }
+
+    public Long getGroupId() { return groupId; }
+    public void setGroupId(Long groupId) { this.groupId = groupId; }
+
+    public String getGroupName() { return groupName; }
+    public void setGroupName(String groupName) { this.groupName = groupName; }
+
+    public String getOwnerUsername() { return ownerUsername; }
+    public void setOwnerUsername(String ownerUsername) { this.ownerUsername = ownerUsername; }
 
     public String getTags() { return tags; }
     public void setTags(String tags) { this.tags = tags; }

@@ -18,6 +18,19 @@ public class SnippetService {
     private final SnippetRepository snippetRepository;
     private GitHubSyncService gitHubSyncService;
 
+    private static final Map<String, List<String>> AI_INTENT_EXPANSIONS = Map.ofEntries(
+            Map.entry("ecommerce", List.of("pagination", "redis", "cache", "jwt", "validation", "mysql")),
+            Map.entry("auth", List.of("jwt", "bcrypt", "security", "cors", "token", "secrets")),
+            Map.entry("login", List.of("jwt", "bcrypt", "security", "token")),
+            Map.entry("api", List.of("rest-api", "exception", "validation", "cors", "rate-limiter")),
+            Map.entry("microservice", List.of("spring-boot", "webclient", "docker", "kubernetes", "retry", "logging")),
+            Map.entry("dashboard", List.of("debounce", "fetch", "bootstrap", "csv", "dark-mode", "react")),
+            Map.entry("frontend", List.of("debounce", "fetch", "clipboard", "xss", "bootstrap", "css")),
+            Map.entry("database", List.of("mysql", "jpa", "index", "pagination", "fulltext", "window-function")),
+            Map.entry("deploy", List.of("docker", "docker-compose", "github-actions", "kubernetes", "nginx")),
+            Map.entry("analytics", List.of("groupingby", "window-function", "cte", "pandas", "rolling-average"))
+    );
+
     public SnippetService(SnippetRepository snippetRepository) {
         this.snippetRepository = snippetRepository;
     }
@@ -42,6 +55,57 @@ public class SnippetService {
                 .sorted((a, b) -> Integer.compare(b.getValue(), a.getValue()))
                 .map(Map.Entry::getKey)
                 .collect(Collectors.toList());
+    }
+
+    public List<Map<String, Object>> aiSearchForProject(String projectQuery) {
+        if (projectQuery == null || projectQuery.isBlank()) {
+            return List.of();
+        }
+        String lowerQuery = projectQuery.toLowerCase();
+        Set<String> expandedTerms = new LinkedHashSet<>(Arrays.asList(lowerQuery.split("[^a-z0-9+.#-]+")));
+        expandedTerms.removeIf(t -> t.length() < 2);
+
+        for (Map.Entry<String, List<String>> entry : AI_INTENT_EXPANSIONS.entrySet()) {
+            if (lowerQuery.contains(entry.getKey())) {
+                expandedTerms.addAll(entry.getValue());
+            }
+        }
+
+        List<Snippet> all = snippetRepository.findAll();
+        List<Map<String, Object>> recommendations = new ArrayList<>();
+
+        for (Snippet s : all) {
+            int score = 0;
+            List<String> matchedReasons = new ArrayList<>();
+            String title = safeLower(s.getTitle());
+            String tags = safeLower(s.getTags());
+            String lang = safeLower(s.getLanguage());
+            String cat = safeLower(s.getCategory());
+            String desc = safeLower(s.getDescription());
+            String proj = safeLower(s.getProjectContext());
+
+            for (String term : expandedTerms) {
+                if (title.contains(term) || tags.contains(term)) {
+                    score += 10;
+                    matchedReasons.add(term);
+                } else if (lang.contains(term) || cat.contains(term) || proj.contains(term)) {
+                    score += 7;
+                    matchedReasons.add(term);
+                } else if (desc.contains(term)) {
+                    score += 4;
+                }
+            }
+            if (score > 0) {
+                Map<String, Object> item = new HashMap<>();
+                item.put("snippet", s);
+                item.put("score", score);
+                item.put("reason", "Matched project needs: " + String.join(", ", matchedReasons.stream().distinct().limit(4).toList()));
+                recommendations.add(item);
+            }
+        }
+
+        recommendations.sort((a, b) -> Integer.compare((int) b.get("score"), (int) a.get("score")));
+        return recommendations.stream().limit(12).collect(Collectors.toList());
     }
 
     private int scoreSnippet(Snippet s, String[] tokens) {
@@ -136,6 +200,7 @@ public class SnippetService {
         forked.setCategory(original.getCategory());
         forked.setProjectContext(newProjectContext != null && !newProjectContext.isBlank()
                 ? newProjectContext : "New Project Adaptation");
+        forked.setVisibility("PUBLIC");
         forked.setTags(original.getTags());
         forked.setDescription(original.getDescription());
         forked.setCodeContent(original.getCodeContent());
@@ -189,6 +254,11 @@ public class SnippetService {
         snippet.setCategory(dto.getCategory());
         snippet.setProjectContext(dto.getProjectContext() != null && !dto.getProjectContext().isBlank()
                 ? dto.getProjectContext() : "General Utility");
+        snippet.setVisibility(dto.getVisibility() != null && !dto.getVisibility().isBlank()
+                ? dto.getVisibility().toUpperCase() : "PUBLIC");
+        snippet.setGroupId(dto.getGroupId());
+        snippet.setGroupName(dto.getGroupName());
+        snippet.setOwnerUsername(dto.getOwnerUsername());
         snippet.setTags(dto.getTags());
         snippet.setDescription(dto.getDescription());
         snippet.setCodeContent(dto.getCodeContent());

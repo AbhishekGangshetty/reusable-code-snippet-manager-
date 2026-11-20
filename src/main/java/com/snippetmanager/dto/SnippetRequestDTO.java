@@ -16,6 +16,10 @@ public class SnippetRequestDTO {
     private String category;
 
     private String projectContext = "General Utility";
+    private String visibility = "PUBLIC";
+    private Long groupId;
+    private String groupName;
+    private String ownerUsername;
     private String tags;
     private String description;
 
@@ -26,8 +30,7 @@ public class SnippetRequestDTO {
     private boolean favorite = false;
     private boolean sharedWithTeam = true;
 
-    public SnippetRequestDTO() {
-    }
+    public SnippetRequestDTO() {}
 
     public SnippetRequestDTO(String title, String language, String category, String tags,
                              String description, String codeContent, String author, boolean favorite, boolean sharedWithTeam) {
@@ -53,6 +56,18 @@ public class SnippetRequestDTO {
 
     public String getProjectContext() { return projectContext; }
     public void setProjectContext(String projectContext) { this.projectContext = projectContext; }
+
+    public String getVisibility() { return visibility; }
+    public void setVisibility(String visibility) { this.visibility = visibility; }
+
+    public Long getGroupId() { return groupId; }
+    public void setGroupId(Long groupId) { this.groupId = groupId; }
+
+    public String getGroupName() { return groupName; }
+    public void setGroupName(String groupName) { this.groupName = groupName; }
+
+    public String getOwnerUsername() { return ownerUsername; }
+    public void setOwnerUsername(String ownerUsername) { this.ownerUsername = ownerUsername; }
 
     public String getTags() { return tags; }
     public void setTags(String tags) { this.tags = tags; }

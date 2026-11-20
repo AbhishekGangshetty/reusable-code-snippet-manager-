@@ -29,6 +29,12 @@ public class SnippetController {
         return ResponseEntity.ok(snippetService.getAllSnippets(keyword, language, category));
     }
 
+    @PostMapping("/ai-search")
+    public ResponseEntity<List<Map<String, Object>>> aiSearchForProject(@RequestBody Map<String, String> body) {
+        String query = body.getOrDefault("query", "");
+        return ResponseEntity.ok(snippetService.aiSearchForProject(query));
+    }
+
     @GetMapping("/{id}")
     public ResponseEntity<Snippet> getSnippetById(@PathVariable Long id) {
         return ResponseEntity.ok(snippetService.getSnippetById(id));

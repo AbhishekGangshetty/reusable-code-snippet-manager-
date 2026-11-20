@@ -44,7 +44,6 @@ public class GitHubWebhookController {
             JsonNode headCommit = root.path("head_commit");
             String commitMessage = headCommit.path("message").asText("");
 
-            // Prevent infinite sync loops from our own outbound commits
             if (commitMessage.startsWith(GitHubSyncService.SYNC_COMMIT_PREFIX)) {
                 return ResponseEntity.ok(Map.of("status", "Ignored self-sync commit"));
             }
@@ -87,12 +86,13 @@ public class GitHubWebhookController {
         Snippet snippet = snippetRepository.findByGithubPath(path).orElseGet(() -> {
             Snippet s = new Snippet();
             s.setGithubPath(path);
-            s.setTitle(extractTitleFromPath(path));
-            s.setLanguage(inferLanguageFromPath(path));
+            s.setTitle(gitHubSyncService.extractTitleFromPath(path));
+            s.setLanguage(gitHubSyncService.inferLanguageFromPath(path));
             s.setCategory("GitHub Team Sync");
             s.setProjectContext("GitHub Collaboration");
+            s.setVisibility("PUBLIC");
             s.setTags("github-sync");
-            s.setDescription("Synced from GitHub repository path: " + path);
+            s.setDescription("Synced from GitHub: " + path);
             s.setSharedWithTeam(true);
             return s;
         });
@@ -102,24 +102,5 @@ public class GitHubWebhookController {
         snippet.setAuthor(author);
         snippetRepository.save(snippet);
         return 1;
-    }
-
-    private String extractTitleFromPath(String path) {
-        String filename = path.substring(path.lastIndexOf('/') + 1);
-        int dot = filename.lastIndexOf('.');
-        return dot > 0 ? filename.substring(0, dot).replace('-', ' ') : filename;
-    }
-
-    private String inferLanguageFromPath(String path) {
-        String lower = path.toLowerCase();
-        if (lower.endsWith(".java")) return "Java";
-        if (lower.endsWith(".js")) return "JavaScript";
-        if (lower.endsWith(".py")) return "Python";
-        if (lower.endsWith(".sql")) return "SQL";
-        if (lower.endsWith(".html") || lower.endsWith(".css")) return "HTML/CSS";
-        if (lower.endsWith(".yml") || lower.endsWith(".yaml")) return "YAML";
-        if (lower.endsWith(".sh")) return "Bash";
-        if (lower.contains("dockerfile")) return "Dockerfile";
-        return "Java";
     }
 }
